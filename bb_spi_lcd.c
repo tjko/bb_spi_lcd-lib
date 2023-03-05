@@ -36,7 +36,7 @@ static uint8_t ucRXBuf[4096];
 static uint dma_tx;
 static dma_channel_config dma_ch_config;
 #define SPI_INST spi0
-static int iTXBufSize = 4096; // max reasonable size
+//static int iTXBufSize = 4096; // max reasonable size
 #define LCD_DELAY 0xff
 
 #ifdef HAS_DMA

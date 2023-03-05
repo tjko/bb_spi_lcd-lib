@@ -24,6 +24,7 @@
 #define memcpy_P memcpy
 #endif
 
+
 static const unsigned char cGIFBits[9] = {1,4,4,4,8,8,8,8,8}; // convert odd bpp values to ones we can handle
 
 // forward references
@@ -36,9 +37,11 @@ static int32_t readMem(GIFFILE *pFile, uint8_t *pBuf, int32_t iLen);
 static int32_t seekMem(GIFFILE *pFile, int32_t iPosition);
 int GIFGetInfo(GIFIMAGE *pPage, GIFINFO *pInfo);
 #if defined( PICO_BUILD ) || defined( __LINUX__ ) || defined( __MCUXPRESSO )
+#if defined( __LINUX__ ) || defined( __MCUXPRESSO )
 static int32_t readFile(GIFFILE *pFile, uint8_t *pBuf, int32_t iLen);
 static int32_t seekFile(GIFFILE *pFile, int32_t iPosition);
 static void closeFile(void *handle);
+#endif
 
 // C API
 int GIF_openRAM(GIFIMAGE *pGIF, uint8_t *pData, int iDataSize, GIF_DRAW_CALLBACK *pfnDraw)

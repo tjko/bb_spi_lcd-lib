@@ -104,6 +104,7 @@ typedef struct {
 #define FLAGS_SWAP_RB 1
 #define FLAGS_INVERT  2
 #define FLAGS_BITBANG 4
+#define FLAGS_16BIT   8
 
 #if defined(_LINUX_) && defined(__cplusplus)
 extern "C" {

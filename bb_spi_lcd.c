@@ -1450,7 +1450,7 @@ void spilcdScrollReset(SPILCD *pLCD)
     }
 	spilcdWriteCommand(pLCD, 0x37); // scroll start address
 	spilcdWriteData16(pLCD, 0, DRAW_TO_LCD);
-	if (pLCD->iLCDType == LCD_HX8357)
+	if (pLCD->iLCDType == LCD_HX8357 || pLCD->iLCDFlags & FLAGS_16BIT)
 	{
 		spilcdWriteData16(pLCD, 0, DRAW_TO_LCD);
 	}
@@ -1770,6 +1770,10 @@ void spilcdWriteCommand(SPILCD *pLCD, unsigned char c)
 {
 unsigned char buf[2];
 
+	if (pLCD->iLCDFlags & FLAGS_16BIT) {
+		spilcdWriteCommand16(pLCD, c);
+		return;
+	}
 	buf[0] = c;
 	myspiWrite(pLCD, buf, 1, MODE_COMMAND, DRAW_TO_LCD);
 } /* spilcdWriteCommand() */
@@ -1790,6 +1794,10 @@ static void spilcdWriteData8(SPILCD *pLCD, unsigned char c)
 {
 unsigned char buf[2];
 
+	if (pLCD->iLCDFlags & FLAGS_16BIT) {
+		spilcdWriteData16(pLCD, c, DRAW_TO_LCD);
+		return;
+	}
 	buf[0] = c;
     myspiWrite(pLCD, buf, 1, MODE_DATA, DRAW_TO_LCD);
 
@@ -1976,7 +1984,7 @@ unsigned char ucBuf[8];
     {
         pLCD->iOldX = x; pLCD->iOldCX = w;
 	spilcdWriteCommand(pLCD, 0x2a); // set column address
-	if (pLCD->iLCDType == LCD_ILI9341 || pLCD->iLCDType == LCD_ILI9342 || pLCD->iLCDType == LCD_ST7735R || pLCD->iLCDType == LCD_ST7789 || pLCD->iLCDType == LCD_ST7735S || pLCD->iLCDType == LCD_ILI9486)
+	if (!(pLCD->iLCDFlags & FLAGS_16BIT) && (pLCD->iLCDType == LCD_ILI9341 || pLCD->iLCDType == LCD_ILI9342 || pLCD->iLCDType == LCD_ST7735R || pLCD->iLCDType == LCD_ST7789 || pLCD->iLCDType == LCD_ST7735S || pLCD->iLCDType == LCD_ILI9486))
 	{
 		x += pLCD->iMemoryX;
 		ucBuf[0] = (unsigned char)(x >> 8);
@@ -2007,7 +2015,7 @@ unsigned char ucBuf[8];
     {
         pLCD->iOldY = y; pLCD->iOldCY = h;
 	spilcdWriteCommand(pLCD, 0x2b); // set row address
-	if (pLCD->iLCDType == LCD_ILI9341 || pLCD->iLCDType == LCD_ILI9342 || pLCD->iLCDType == LCD_ST7735R || pLCD->iLCDType == LCD_ST7735S || pLCD->iLCDType == LCD_ST7789 || pLCD->iLCDType == LCD_ILI9486)
+	if (!(pLCD->iLCDFlags & FLAGS_16BIT) && (pLCD->iLCDType == LCD_ILI9341 || pLCD->iLCDType == LCD_ILI9342 || pLCD->iLCDType == LCD_ST7735R || pLCD->iLCDType == LCD_ST7735S || pLCD->iLCDType == LCD_ST7789 || pLCD->iLCDType == LCD_ILI9486))
 	{
 		y += pLCD->iMemoryY;
 		ucBuf[0] = (unsigned char)(y >> 8);

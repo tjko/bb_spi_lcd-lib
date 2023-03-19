@@ -2003,7 +2003,7 @@ unsigned char ucBuf[8];
 		ucBuf[2] = 0;
 		ucBuf[3] = (unsigned char)x;
 		x = x + w -1;
-		if (x > pLCD->iWidth-1) x = pLCD->iWidth-1;
+//		if (x > pLCD->iWidth-1) x = pLCD->iWidth-1;
 		ucBuf[4] = 0;
 		ucBuf[5] = (unsigned char)(x >> 8);
 		ucBuf[6] = 0;

@@ -37,7 +37,6 @@ static uint dma_tx;
 static dma_channel_config dma_ch_config;
 #define SPI_INST spi0
 //static int iTXBufSize = 4096; // max reasonable size
-#define LCD_DELAY 0xff
 
 #ifdef HAS_DMA
 void spilcdWaitDMA(void);
@@ -1116,6 +1115,17 @@ void spilcdSetCallbacks(SPILCD *pLCD, RESETCALLBACK pfnReset, DATACALLBACK pfnDa
     pLCD->pfnDataCallback = pfnData;
     pLCD->pfnResetCallback = pfnReset;
 }
+///
+/// Provide custom command/parameters list for initializing LCD panel.
+/// To be called before calling spilcdInit()
+///
+void spilcdCustomInit(SPILCD *pLCD, const unsigned char *initlist, uint32_t initlist_len, int invert_offset, int bgr_offset)
+{
+	pLCD->custom_init = initlist;
+	pLCD->custom_init_len = initlist_len;
+	pLCD->init_invert_offset = invert_offset;
+	pLCD->init_bgr_offset = bgr_offset;
+}
 //
 // Initialize the LCD controller and clear the display
 // LED pin is optional - pass as -1 to disable
@@ -1216,10 +1226,12 @@ start_of_init:
 	if (pLCD->iLCDType == LCD_ST7789 || pLCD->iLCDType == LCD_ST7789_240 || pLCD->iLCDType == LCD_ST7789_135 || pLCD->iLCDType == LCD_ST7789_NOCS)
 	{
         uint8_t iBGR = (pLCD->iLCDFlags & FLAGS_SWAP_RB) ? 8:0;
-	s = (unsigned char *)&uc240x240InitList[0];
-        memcpy(d, s, sizeof(uc240x240InitList));
+	uint bgr_offset = (pLCD->init_bgr_offset > 0 ? pLCD->init_bgr_offset : 6);
+	uint initlist_len = (pLCD->custom_init ? pLCD->custom_init_len : sizeof(uc240x240InitList));
+	s = (unsigned char *)(pLCD->custom_init ? pLCD->custom_init : &uc240x240InitList[0]);
+        memcpy(d, s, initlist_len);
         s = d;
-        s[6] = 0x00 + iBGR;
+        s[bgr_offset] = 0x00 + iBGR;
         pLCD->iCurrentWidth = pLCD->iWidth = 240;
         pLCD->iCurrentHeight = pLCD->iHeight = 320;
 		if (pLCD->iLCDType == LCD_ST7789_240 || pLCD->iLCDType == LCD_ST7789_NOCS)
@@ -1260,13 +1272,15 @@ start_of_init:
     // Send the commands/parameters to initialize the LCD controller
 	else if (pLCD->iLCDType == LCD_ILI9341)
 	{  // copy to RAM to modify
-        s = (unsigned char *)uc240InitList;
-        memcpy(d, s, sizeof(uc240InitList));
+	uint invert_offset = (pLCD->init_invert_offset > 0 ? pLCD->init_invert_offset : 52);
+	uint initlist_len = (pLCD->custom_init ? pLCD->custom_init_len : sizeof(uc240InitList));
+        s = (unsigned char *)(pLCD->custom_init ? pLCD->custom_init : uc240InitList);
+        memcpy(d, s, initlist_len);
         s = d;
         if (pLCD->iLCDFlags & FLAGS_INVERT)
-            s[52] = 0x21; // invert pixels
+            s[invert_offset] = 0x21; // invert pixels
         else
-            s[52] = 0x20; // non-inverted
+            s[invert_offset] = 0x20; // non-inverted
         pLCD->iCurrentWidth = pLCD->iWidth = 240;
         pLCD->iCurrentHeight = pLCD->iHeight = 320;
 	}
@@ -1279,8 +1293,9 @@ start_of_init:
     }
 	else if (pLCD->iLCDType == LCD_ILI9342)
 	{
-		s = (unsigned char *)uc320InitList;
-        memcpy(d, s, sizeof(uc320InitList));
+	uint initlist_len = (pLCD->custom_init ? pLCD->custom_init_len : sizeof(uc320InitList));
+	s = (unsigned char *)(pLCD->custom_init ? pLCD->custom_init : uc320InitList);
+        memcpy(d, s, initlist_len);
         s = d;
         pLCD->iCurrentWidth = pLCD->iWidth = 320;
         pLCD->iCurrentHeight = pLCD->iHeight = 240;
@@ -1292,8 +1307,9 @@ start_of_init:
         spilcdWriteData16(pLCD, 0x0001, DRAW_TO_LCD);
         sleep_us(60000);
 
-        s = (unsigned char *)uc480InitList;
-        memcpy(d, s, sizeof(uc480InitList));
+	uint initlist_len = (pLCD->custom_init ? pLCD->custom_init_len : sizeof(uc480InitList));
+        s = (unsigned char *)(pLCD->custom_init ? pLCD->custom_init : uc480InitList);
+        memcpy(d, s, initlist_len);
         s = d;
         pLCD->iCurrentWidth = pLCD->iWidth = 320;
         pLCD->iCurrentHeight = pLCD->iHeight = 480;
@@ -1301,16 +1317,19 @@ start_of_init:
         else if (pLCD->iLCDType == LCD_ILI9486)
         {
             uint8_t ucBGRFlags;
-            s = (unsigned char *)ucILI9486InitList;
-            memcpy(d, s, sizeof(ucILI9486InitList));
+   	    uint bgr_offset = (pLCD->init_bgr_offset > 0 ? pLCD->init_bgr_offset : 66);
+   	    uint invert_offset = (pLCD->init_invert_offset > 0 ? pLCD->init_invert_offset : 63);
+	    uint initlist_len = (pLCD->custom_init ? pLCD->custom_init_len : sizeof(ucILI9486InitList));
+            s = (unsigned char *)(pLCD->custom_init ? pLCD->custom_init : ucILI9486InitList);
+            memcpy(d, s, initlist_len);
             s = d;
-            ucBGRFlags = 0xa; // normal direction, RGB color order
+            ucBGRFlags = d[bgr_offset]; 
             if (pLCD->iLCDFlags & FLAGS_INVERT)
-               d[63] = 0x21; // invert display command
+               d[invert_offset] = 0x21; // invert display command
             if (pLCD->iLCDFlags & FLAGS_SWAP_RB)
             {
                 ucBGRFlags |= 8;
-               d[66] = ucBGRFlags;
+		d[bgr_offset] = ucBGRFlags;
             }
             pLCD->iCurrentWidth = pLCD->iWidth = 320;
             pLCD->iCurrentHeight = pLCD->iHeight = 480;
@@ -1320,30 +1339,36 @@ start_of_init:
         uint8_t iBGR = 0x10;
         if (pLCD->iLCDFlags & FLAGS_SWAP_RB)
             iBGR = 0;
-        s = (unsigned char *)ucILI9225InitList;
-        memcpy(d, s, sizeof(ucILI9225InitList));
+	uint bgr_offset = (pLCD->init_bgr_offset > 0 ? pLCD->init_bgr_offset : 74);
+//	uint invert_offset = (pLCD->init_invert_offset > 0 ? pLCD->init_invert_offset : 55);
+	uint initlist_len = (pLCD->custom_init ? pLCD->custom_init_len : sizeof(ucILI9225InitList));
+        s = (unsigned char *)(pLCD->custom_init ? pLCD->custom_init : ucILI9225InitList);
+        memcpy(d, s, initlist_len);
         s = d;
 //        if (iFlags & FLAGS_INVERT)
-//           s[55] = 0x21; // invert on
+//           s[invert_offset] = 0x21; // invert on
 //        else
-//           s[55] = 0x20; // invert off
-        s[74] = iBGR;
+//           s[invert_offset] = 0x20; // invert off
+        s[bgr_offset] = iBGR;
         pLCD->iCurrentWidth = pLCD->iWidth = 176;
         pLCD->iCurrentHeight = pLCD->iHeight = 220;
     }
     else if (pLCD->iLCDType == LCD_ST7735S || pLCD->iLCDType == LCD_ST7735S_B)
     {
         uint8_t iBGR = 0;
+	uint bgr_offset = (pLCD->init_bgr_offset > 0 ? pLCD->init_bgr_offset : 5);
+	uint invert_offset = (pLCD->init_invert_offset > 0 ? pLCD->init_invert_offset : 55);
+	uint initlist_len = (pLCD->custom_init ? pLCD->custom_init_len : sizeof(uc80InitList));
         if (pLCD->iLCDFlags & FLAGS_SWAP_RB)
             iBGR = 8;
-        s = (unsigned char *)uc80InitList;
-        memcpy(d, s, sizeof(uc80InitList));
+        s = (unsigned char *)(pLCD->custom_init ? pLCD->custom_init : uc80InitList);
+        memcpy(d, s, initlist_len);
         s = d;
         if (pLCD->iLCDFlags & FLAGS_INVERT)
-           s[55] = 0x21; // invert on
+           s[invert_offset] = 0x21; // invert on
         else
-           s[55] = 0x20; // invert off
-        s[5] = 0x00 + iBGR; // normal orientation
+           s[invert_offset] = 0x20; // invert off
+        s[bgr_offset] = 0x00 + iBGR; // normal orientation
         pLCD->iCurrentWidth = pLCD->iWidth = 80;
         pLCD->iCurrentHeight = pLCD->iHeight = 160;
         if (pLCD->iLCDType == LCD_ST7735S_B)
@@ -1359,9 +1384,10 @@ start_of_init:
     }
 	else // ST7735R
 	{
-		s = (unsigned char *)uc128InitList;
-                memcpy(d, s, sizeof(uc128InitList));
-                s = d;
+	uint initlist_len = (pLCD->custom_init ? pLCD->custom_init_len : sizeof(uc128InitList));
+	s = (unsigned char *)(pLCD->custom_init ? pLCD->custom_init : uc128InitList);
+        memcpy(d, s, initlist_len);
+        s = d;
         pLCD->iCurrentWidth = pLCD->iWidth = 128;
         pLCD->iCurrentHeight = pLCD->iHeight = 160;
 	}
@@ -2803,6 +2829,8 @@ int bX=0, bY=0, bV=0;
        }
       if (pLCD->iLCDFlags & FLAGS_SWAP_RB)
           uc ^= 0x8;
+      if (pLCD->iLCDFlags & FLAGS_SWAP_X)
+	  uc ^= 0x40;
       spilcdWriteCommand(pLCD, 0x36); // MADCTL
       spilcdWriteData8(pLCD, uc);
    }

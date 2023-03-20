@@ -69,6 +69,10 @@ typedef struct tagSPILCD
    int iOldX, iOldY, iOldCX, iOldCY; // to optimize spilcdSetPosition()
    RESETCALLBACK pfnResetCallback;
    DATACALLBACK pfnDataCallback;
+   const unsigned char *custom_init;
+   uint32_t custom_init_len;
+   int init_invert_offset;
+   int init_bgr_offset;
 } SPILCD;
 
 // Proportional font data taken from Adafruit_GFX library
@@ -105,6 +109,9 @@ typedef struct {
 #define FLAGS_INVERT  2
 #define FLAGS_BITBANG 4
 #define FLAGS_16BIT   8
+#define FLAGS_SWAP_X  16
+
+#define LCD_DELAY 0xff
 
 #if defined(_LINUX_) && defined(__cplusplus)
 extern "C" {
@@ -122,6 +129,9 @@ void spilcdSetTXBuffer(uint8_t *pBuf, int iSize);
 // ILI9341 only
 //
 int spilcdSetGamma(SPILCD *pLCD, int iMode);
+
+// provide custom command/parameters list for intializing display
+void spilcdCustomInit(SPILCD *pLCD, const unsigned char *initlist, uint32_t initlist_len, int invert_offset, int bgr_offset);
 
 // Initialize the library
 int spilcdInit(SPILCD *pLCD, int iLCDType, int iFlags, int32_t iSPIFreq, int iCSPin, int iDCPin, int iResetPin, int iLEDPin, int iMISOPin, int iMOSIPin, int iCLKPin);

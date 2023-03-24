@@ -3045,7 +3045,7 @@ void spilcdDrawLine(SPILCD *pLCD, int x1, int y1, int x2, int y2, unsigned short
 //
 // Decompress one line of 8-bit RLE data
 //
-unsigned char * DecodeRLE8(unsigned char *s, int iWidth, uint16_t *d, uint16_t *usPalette)
+const unsigned char * DecodeRLE8(const unsigned char *s, int iWidth, uint16_t *d, uint16_t *usPalette)
 {
 unsigned char c, ucRepeat, ucCount, ucColor=0;
 long l;
@@ -3107,7 +3107,7 @@ long l;
 //
 // Decompress one line of 4-bit RLE data
 //
-unsigned char * DecodeRLE4(unsigned char *s, int iWidth, uint16_t *d, uint16_t *usPalette)
+const unsigned char * DecodeRLE4(const unsigned char *s, int iWidth, uint16_t *d, uint16_t *usPalette)
 {
 unsigned char c, ucOdd=0, ucRepeat, ucCount, ucColor, uc1=0, uc2=0;
 long l;
@@ -3184,11 +3184,11 @@ long l;
 // when drawinng to the back buffer. Set it to -1 to disable
 // returns -1 for error, 0 for success
 //
-int spilcdDrawBMP(SPILCD *pLCD, uint8_t *pBMP, int iDestX, int iDestY, int bStretch, int iTransparent, int iFlags)
+int spilcdDrawBMP(SPILCD *pLCD, const uint8_t *pBMP, int iDestX, int iDestY, int bStretch, int iTransparent, int iFlags)
 {
     int iOffBits, iPitch;
     uint16_t usPalette[256];
-    uint8_t *pCompressed;
+    const uint8_t *pCompressed;
     uint8_t ucCompression;
     int16_t cx, cy, bpp, y; // offset to bitmap data
     int j, x;

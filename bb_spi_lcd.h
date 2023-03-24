@@ -246,7 +246,7 @@ void spilcdSetPosition(SPILCD *pLCD, int x, int y, int w, int h, int bRender);
 // Optionally stretch to 2x size
 // returns -1 for error, 0 for success
 //
-int spilcdDrawBMP(SPILCD *pLCD, uint8_t *pBMP, int iDestX, int iDestY, int bStretch, int iTransparent, int bRender);
+int spilcdDrawBMP(SPILCD *pLCD, const uint8_t *pBMP, int iDestX, int iDestY, int bStretch, int iTransparent, int bRender);
 
 //
 // Give bb_spi_lcd two callback functions to talk to the LCD
